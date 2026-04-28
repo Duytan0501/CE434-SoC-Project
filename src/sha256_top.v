@@ -23,7 +23,7 @@ module sha256_top(
     );
     
     // Instance round computation module (dùng module bạn đã viết)
-    sha256_round_scheduler_include comp_inst (
+    v2_sha256_round_scheduler_include comp_inst (
         .clk(clk),
         .rst_n(rst_n),
         .start(padding_done),           // Bắt đầu khi padding xong

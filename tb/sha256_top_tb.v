@@ -94,6 +94,6 @@ module sha256_top_tb;
         else $display("❌ [FAIL] thacomobihome | Got: %h", hash);
 
         $display("\n========== ALL TESTS COMPLETED =========="); 
-        #100; $stop;
+        #100; $finish;
     end
 endmodule

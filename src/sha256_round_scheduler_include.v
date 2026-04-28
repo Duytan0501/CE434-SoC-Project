@@ -38,6 +38,27 @@ module sha256_round_scheduler_include (
     // Stage 2 registers  
     reg [31:0] T1, T2;  // T1_stage1, T2_stage1
 
+
+    // Khai báo W là wire thay vì reg
+
+    assign W[0]  = message_block[511:480];
+    assign W[1]  = message_block[479:448];
+    assign W[2]  = message_block[447:416];
+    assign W[3]  = message_block[415:384];
+    assign W[4]  = message_block[383:352];
+    assign W[5]  = message_block[351:320];
+    assign W[6]  = message_block[319:288];
+    assign W[7]  = message_block[287:256];
+    assign W[8]  = message_block[255:224];
+    assign W[9]  = message_block[223:192];
+    assign W[10] = message_block[191:160];
+    assign W[11] = message_block[159:128];
+    assign W[12] = message_block[127:96];
+    assign W[13] = message_block[95:64];
+    assign W[14] = message_block[63:32];
+    assign W[15] = message_block[31:0];
+
+
     // ========== CONSTANTS ==========
     (* romstyle = "M9K" *) reg [31:0] K [0:63];
     initial begin
@@ -166,9 +187,9 @@ module sha256_round_scheduler_include (
                     {a, b, c, d, e, f, g, h};
                     
                     // Khởi tạo W[0:15] từ message_block
-                    for (i = 0; i < 16; i=i+1) begin
-                        W[i] <= message_block[511 - 32*i -: 32];
-                    end
+                    // for (i = 0; i < 16; i=i+1) begin
+                    //     W[i] <= message_block[511 - 32*i -: 32];
+                    // end
                 end
                 
                 RUN_ROUNDS: begin
