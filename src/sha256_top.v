@@ -12,7 +12,7 @@ module sha256_top(
     wire         ready_for_next_block;  // Thêm wire này
     
     // Instance message padding module
-    sha256_message_padding padding_inst (
+    v2_sha256_message_padding padding_inst (
         .clk(clk),
         .rst_n(rst_n),
         .input_start(input_start),
