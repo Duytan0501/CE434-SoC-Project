@@ -33,7 +33,7 @@ module v2_sha256_round_scheduler_include (
     reg [31:0] s0_sigma0, s0_sigma1, s0_ch_W0, s0_maj;
     reg [31:0] s0_K;
 
-    // Stage 1 registers (tính T1_partialA, T1_partialB và T2)
+    // Stage 1 registers (tinh T1_partialA, T1_partialB va� T2)
 	reg [31:0] s1_T1_partialA; // h + sigma1(e)
 	reg [31:0] s1_T1_partialB; // ch_W0(e,f,g) + K[round]
     reg [31:0] s2_T2;          // sigma0 + maj
@@ -41,7 +41,7 @@ module v2_sha256_round_scheduler_include (
     // Stage 2 registers (hoàn thành T1 và tổng cuối)
     reg [31:0] s2_T1;          // T1 đầy đủ sau khi cộng
     // ===== PIPELINE CONTROL =====
-    reg [1:0] pipe_stage;      // 0→1→2→3 thay vì pipe_step 0→1→2
+    reg [1:0] round_stage;      // 0→1→2→3 thay vì pipe_step 0→1→2
 
     // ===== MESSAGE SCHEDULE PIPELINE =====
     reg [31:0] s0_sigma_lower0, s0_sigma_lower1;
@@ -50,7 +50,7 @@ module v2_sha256_round_scheduler_include (
 	reg [31:0] s2_W_next;
 
     // ========== CONSTANTS ==========
-    (* romstyle = "M9K" *) reg [31:0] K [0:63];
+    reg [31:0] K [0:63];//look up table cho K constants
     initial begin
         K[0]  = 32'h428a2f98; K[1]  = 32'h71374491; K[2]  = 32'hb5c0fbcf; K[3]  = 32'he9b5dba5;
         K[4]  = 32'h3956c25b; K[5]  = 32'h59f111f1; K[6]  = 32'h923f82a4; K[7]  = 32'hab1c5ed5;
@@ -70,7 +70,7 @@ module v2_sha256_round_scheduler_include (
         K[60] = 32'h90befffa; K[61] = 32'ha4506ceb; K[62] = 32'hbef9a3f7; K[63] = 32'hc67178f2;
     end
 
-    // ========== HÀM LOGIC (giữ nguyên) ==========
+    // ========== HAM LOGIC ==========
     function [31:0] maj;
         input [31:0] x, y, z;
         begin
@@ -122,35 +122,34 @@ module v2_sha256_round_scheduler_include (
             LOAD_IV: 
                 next_state = RUN_ROUNDS;
             RUN_ROUNDS: 
-                // Kết thúc khi round=63 và đã xử lý xong stage cuối
-                if (round == 63 && pipe_stage == 2'd3) 
+                //Ket thuc khi xong 64 roung cung nhu stage thu 4
+                if (round == 63 && round_stage == 2'd3) 
                     next_state = UPDATE_HASH;
             UPDATE_HASH: 
-                if (hash_state == 3'd4) begin//Chỉ khi hash ở stage 4, đã cập nhật current_hash xong mới chuyển state
+                if (hash_state == 3'd4) begin//Chi khi hash den stage 4, cap nhat current_hash xong moi chuyen state
                     if (last_block) next_state = WAIT_LAST;
                     else next_state = IDLE;
                 end else next_state = UPDATE_HASH;
-            WAIT_LAST: 
-                next_state = DONE;
+            WAIT_LAST: next_state = DONE;
             DONE: 
                 if (!start) next_state = IDLE;
         endcase
     end
 
-    // ========== MAIN PIPELINE LOGIC ==========
+    // ========== MAIN multicycle LOGIC ==========
     // mach Sequential logic for current state
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state <= IDLE;
             round <= 0;
-            pipe_stage <= 0;
+            round_stage <= 0;
             ready_for_next_block <= 0;
             hash_valid <= 0;
             current_hash <= 256'h0;
             final_hash <= 256'h0;
             hash_state <= 3'd0;
             first_block <= 1'b1;//Vì mới reset nên chắc chắn block nạp vào là block đầu
-            // Reset tất cả pipeline registers
+            // Reset tất cả thanh ghi 
             s0_sigma0 <= 0; s0_sigma1 <= 0; s0_ch_W0 <= 0; s0_maj <= 0;
             s0_K <= 0;
             s0_sigma_lower0 <= 0; s0_sigma_lower1 <= 0;
@@ -165,16 +164,15 @@ module v2_sha256_round_scheduler_include (
             case (state)
                 IDLE: begin
                     round <= 0;
-                    pipe_stage <= 0;
+                    round_stage <= 0;
                     ready_for_next_block <= 1;
                     hash_valid <= 0;
                     hash_state <= 3'd0;
                 end
                 LOAD_IV: begin
                     round <= 0;
-                    pipe_stage <= 0;
-                    ready_for_next_block <= 0;
-                    
+                    round_stage <= 0;
+                    ready_for_next_block <= 0;  
                     // Load IV
                     if (first_block) begin//Chỉ xài 1 lần ở block đầu
                         a <= 32'h6a09e667; b <= 32'hbb67ae85;
@@ -185,7 +183,7 @@ module v2_sha256_round_scheduler_include (
                         c_old <= 32'h3c6ef372; d_old <= 32'ha54ff53a;
                         e_old <= 32'h510e527f; f_old <= 32'h9b05688c;
                         g_old <= 32'h1f83d9ab; h_old <= 32'h5be0cd19;
-                        first_block <= 1'b0;//Đã load IV thì chắc chắn ko còn block đầu nữa
+                        first_block <= 1'b0;//Nếu đã load IV thì chắc chắn ko còn block đầu nữa
                     end else begin//Cập nhật lại các thanh ghi a,b,c,d,e,f,g,h
                         {a, b, c, d, e, f, g, h} <= current_hash;
                     end
@@ -213,7 +211,7 @@ module v2_sha256_round_scheduler_include (
                     // ==========================================
                     // STAGE 0: Tính tất cả hàm logic + đọc K
                     // ==========================================
-                    if (pipe_stage == 2'd0) begin
+                    if (round_stage == 2'd0) begin
                         // Tính sigma cho message schedule (W[16] trong tương lai)
                         s0_sigma_lower0 <= sigma_lower_0(W[1]);
                         s0_sigma_lower1 <= sigma_lower_1(W[14]);
@@ -221,18 +219,18 @@ module v2_sha256_round_scheduler_include (
                         // Tính các hàm cho round computation
                         s0_sigma0 <= sigma_upper_0(a);
                         s0_sigma1 <= sigma_upper_1(e);
-                        //Tính lươn ch + W[0 để stage sau khỏi tính
+                        //Tính luôn ch + W[0 để stage sau khỏi tính
                         s0_ch_W0  <= ch(e, f, g) + W[0];
                         s0_maj    <= maj(a, b, c);
-                        // Đọc K, ko cần đọc W[0] vì phải tốn thêm 32 bit thanh ghi
-                        s0_K  <= K[round];//Đọc K vì ram cần 1 clock mới xuất giá trị ra
-                        pipe_stage <= 2'd1;
+                        //Đọc trước K
+                        s0_K  <= K[round];
+                        round_stage <= 2'd1;
                     end
                     
                     // ==========================================
                     // STAGE 1: Tính T1_partial + T2 (CHƯA cộng W[0])
                     // ==========================================
-                    else if (pipe_stage == 2'd1) begin
+                    else if (round_stage == 2'd1) begin
                         // Message schedule: tính W tiếp theo, chia đôi để thành phép cộng 2 ngôi
                         s1_W_nextA <= s0_sigma_lower0 + s0_sigma_lower1;
 						s1_W_nextB <= W[0] + W[9];
@@ -242,26 +240,26 @@ module v2_sha256_round_scheduler_include (
                         // T1_partialB = ch(e,f,g) + K[round] + W[0] (đã tính ở stage 0)
                         s1_T1_partialA <= h + s0_sigma1;
 						s1_T1_partialB <= s0_K + s0_ch_W0;
-                        pipe_stage <= 2'd2;
+                        round_stage <= 2'd2;
                     end
                     
                     // ==========================================
                     // STAGE 2: Hoàn thành T1 = T1_partial
                     // ==========================================
-                    else if (pipe_stage == 2'd2) begin
+                    else if (round_stage == 2'd2) begin
                         // T1 đầy đủ
                         s2_T1 <= s1_T1_partialA + s1_T1_partialB;
 						s2_W_next <= s1_W_nextA+s1_W_nextB;
                         // Tính T2 ở stage này để tối ưu trễ truyền cho stage 3 thay vì phải giữ tận 2 stage
                         // T2 = sigma0(a) + maj(a,b,c)
                         s2_T2 <= s0_sigma0 + s0_maj;
-                        pipe_stage <= 2'd3;
+                        round_stage <= 2'd3;
                     end
                     
                     // ==========================================
                     // STAGE 3: Cập nhật thanh ghi + shift W
                     // ==========================================
-                    else if (pipe_stage == 2'd3) begin
+                    else if (round_stage == 2'd3) begin
                         // Cập nhật a và e mới(các thanh gh này ko thay đổi ở state trước nên ko cần lưu lại)
                         a <= s2_T1 + s2_T2;        // a_new = T1 + T2
                         b <= a;                  // b_new = a_cũ
@@ -288,7 +286,7 @@ module v2_sha256_round_scheduler_include (
                         W[13] <= W[14];
                         W[14] <= W[15];
                         W[15] <= s2_W_next;  // W[16] được tính từ stage 2
-                        pipe_stage <= 2'd0;
+                        round_stage <= 2'd0;
                         // Tăng round counter
                         if (round < 63) 
                             round <= round + 6'd1;
@@ -324,18 +322,12 @@ module v2_sha256_round_scheduler_include (
                             hash_state <= 3'd0;
                         end
                     endcase
-                    /*current_hash <= {a_old + a, b_old + b, c_old + c, d_old + d,
-                                     e_old + e, f_old + f, g_old + g, h_old + h};
-                    if (last_block) 
-                        final_hash <= {a_old + a, b_old + b, c_old + c, d_old + d,
-                                       e_old + e, f_old + f, g_old + g, h_old + h};*/
                 end
                 
                 WAIT_LAST: begin
                     hash_valid <= 1;//Chỉ khi nào last block mới cập nhật
                     if(last_block) final_hash <= current_hash;
                 end
-                
                 DONE: begin
                     hash_valid <= 0;
                     first_block <= 1'b1;

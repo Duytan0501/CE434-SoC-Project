@@ -6,198 +6,237 @@ module sha256_top_tb;
     reg input_done;
     reg [7:0] inp_data; 
     wire [255:0] hash;
+    wire ready_for_input;
     wire hash_valid;
     localparam [255:0] EXP_TOI_YEU_UIT    = 256'h920c567af0b7856f601b3b9b5e31fd8dfbf4c8658514d672818b5e10dc7ea28b;
     localparam [255:0] EXP_TANPRODZ       = 256'h1c241145f61fecc7e5fb3d2811558e68b589548a671f5ad6d8b19b497539648b;
     localparam [255:0] EXP_THACOMOBIHOME  = 256'haf7b22556046c054aeaf26c243188cbe9723544cf03ccc7a79916cb9c56b01d3;
-    localparam [255:0] EXP_100A           = 256'h2816597888e4a0d3a36b82b83316ab32680eb8f00f8cd3b904d681246d285a0e; 
+    localparam [255:0] EXP_1000A          = 256'h41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3;
     localparam [255:0] EXP_60B            = 256'hbbeb514bf12fdef276e7fde1f3cadc8fd1ec8ec070d893bd98f5d1b383de66cf;
+    localparam [255:0] EXP_EMPTY          = 256'he3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
+    localparam [255:0] EXP_NIST_56        = 256'h248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1;
+    localparam [255:0] EXP_55_D           = 256'h8347d07d842bdc2392323e14b0e910857b7116b59492dfad6a21de672db495cf;
     integer i;
+    reg[447:0] nist_str;
     sha256_top dut (
         .clk(clk), .rst_n(rst_n), .input_start(input_start),
         .input_done(input_done), .inp_data(inp_data),
-        .hash(hash), .hash_valid(hash_valid)
+        .hash(hash), 
+        .ready_for_input(ready_for_input), 
+        .hash_valid(hash_valid)
     );
-
-    always #5 clk = ~clk; 
+    always #10 clk = ~clk; 
     initial begin
-        // Khoi tao he thong
         clk = 0;
         rst_n = 1; 
         input_start = 0; 
         input_done = 0; 
         inp_data = 8'd0;
-        
-        // Reset lan dau
         #20 rst_n = 0; 
         #10 rst_n = 1; 
         #10;
-
         // -------------------------------------------------------
         // TEST 1: "toi_yeu_uit"
         // -------------------------------------------------------
-        $display("\n=======================================================");
         $display("TEST 1: Hashing 'toi_yeu_uit'");
-        $display("=======================================================");
-        
-        input_start = 1; @(posedge clk); input_start = 0; 
-        wait(dut.padding_inst.curr == 2'b01); 
-        @(negedge clk);                       
-        
-        inp_data = "t"; #10; 
-        inp_data = "o"; #10; 
-        inp_data = "i"; #10; 
-        inp_data = "_"; #10; 
-        inp_data = "y"; #10; 
-        inp_data = "e"; #10; 
-        inp_data = "u"; #10; 
-        inp_data = "_"; #10; 
-        inp_data = "u"; #10; 
-        inp_data = "i"; #10; 
-        inp_data = "t"; #10;
-        
-        input_done = 1; #10; input_done = 0; 
-        
-        // Kiem tra ket qua Test 1
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1); 
+        @(negedge clk); 
+        input_start = 0; 
+        inp_data = "t"; 
+        @(negedge clk); inp_data = "o"; 
+        @(negedge clk); inp_data = "i"; 
+        @(negedge clk); inp_data = "_"; 
+        @(negedge clk); inp_data = "y"; 
+        @(negedge clk); inp_data = "e"; 
+        @(negedge clk); inp_data = "u"; 
+        @(negedge clk); inp_data = "_"; 
+        @(negedge clk); inp_data = "u"; 
+        @(negedge clk); inp_data = "i"; 
+        @(negedge clk); inp_data = "t"; 
+        @(negedge clk); input_done = 1; 
+        @(negedge clk); input_done = 0;
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_TOI_YEU_UIT);
         $display("Got   : %h", hash);
-        if (hash == EXP_TOI_YEU_UIT) $display("[PASS] toi_yeu_uit"); 
+        if (hash == EXP_TOI_YEU_UIT) $display("[PASS] toi_yeu_uit");
         else                         $display("[FAIL] toi_yeu_uit");
-        
-        // Reset cho Test tiep theo
-        #20 rst_n = 0; #10 rst_n = 1; #10;
-
+        repeat(2) @(negedge clk);
+        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
         // TEST 2: "tanprodz"
         // -------------------------------------------------------
-        $display("\n=======================================================");
-        $display("TEST 2: Hashing 'tanprodz'");
-        $display("=======================================================");
-        
-        input_start = 1; @(posedge clk); input_start = 0; 
-        wait(dut.padding_inst.curr == 2'b01); 
-        @(negedge clk);
-        
-        inp_data = "t"; #10; 
-        inp_data = "a"; #10;  
-        inp_data = "n"; #10; 
-        inp_data = "p"; #10; 
-        inp_data = "r"; #10; 
-        inp_data = "o"; #10; 
-        inp_data = "d"; #10;  
-        inp_data = "z"; #10;
-        
-        input_done = 1; #10; input_done = 0; 
-        
-        // Kiem tra ket qua Test 2
+        $display("\nTEST 2: Hashing 'tanprodz'");
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1); 
+        @(negedge clk); 
+        input_start = 0; 
+        inp_data = "t"; 
+        @(negedge clk); inp_data = "a";  
+        @(negedge clk); inp_data = "n"; 
+        @(negedge clk); inp_data = "p"; 
+        @(negedge clk); inp_data = "r"; 
+        @(negedge clk); inp_data = "o"; 
+        @(negedge clk); inp_data = "d";  
+        @(negedge clk); inp_data = "z"; 
+        @(negedge clk); input_done = 1; 
+        @(negedge clk); input_done = 0;
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_TANPRODZ);
         $display("Got   : %h", hash);
-        if (hash == EXP_TANPRODZ) $display("[PASS] tanprodz"); 
+        if (hash == EXP_TANPRODZ) $display("[PASS] tanprodz");
         else                      $display("[FAIL] tanprodz");
-        
-        // Reset cho Test tiep theo
-        #20 rst_n = 0; #10 rst_n = 1; #10;
-
+        repeat(2) @(negedge clk);
+        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
         // TEST 3: "thacomobihome"
         // -------------------------------------------------------
-        $display("\n=======================================================");
-        $display("TEST 3: Hashing 'thacomobihome'");
-        $display("=======================================================");
-        
-        input_start = 1; @(posedge clk); input_start = 0;
-        wait(dut.padding_inst.curr == 2'b01); 
-        @(negedge clk);
-        
-        inp_data = "t"; #10; 
-        inp_data = "h"; #10;  
-        inp_data = "a"; #10;  
-        inp_data = "c"; #10; 
-        inp_data = "o"; #10; 
-        inp_data = "m"; #10; 
-        inp_data = "o"; #10; 
-        inp_data = "b"; #10; 
-        inp_data = "i"; #10;  
-        inp_data = "h"; #10;  
-        inp_data = "o"; #10; 
-        inp_data = "m"; #10; 
-        inp_data = "e"; #10; 
-        
-        input_done = 1; #10; input_done = 0; 
-        
-        // Kiem tra ket qua Test 3
+        $display("\nTEST 3: Hashing 'thacomobihome'");  
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1);        
+        @(negedge clk); 
+        input_start = 0;
+        inp_data = "t";        
+        @(negedge clk); inp_data = "h";  
+        @(negedge clk); inp_data = "a";  
+        @(negedge clk); inp_data = "c"; 
+        @(negedge clk); inp_data = "o"; 
+        @(negedge clk); inp_data = "m"; 
+        @(negedge clk); inp_data = "o"; 
+        @(negedge clk); inp_data = "b"; 
+        @(negedge clk); inp_data = "i";  
+        @(negedge clk); inp_data = "h"; 
+        @(negedge clk); inp_data = "o"; 
+        @(negedge clk); inp_data = "m"; 
+        @(negedge clk); inp_data = "e";        
+        @(negedge clk); input_done = 1; 
+        @(negedge clk); input_done = 0;
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_THACOMOBIHOME);
         $display("Got   : %h", hash);
-        if (hash == EXP_THACOMOBIHOME) $display("[PASS] thacomobihome"); 
+        if (hash == EXP_THACOMOBIHOME) $display("[PASS] thacomobihome");
         else                           $display("[FAIL] thacomobihome");
-        
-        // Reset cho Test tiep theo
-        #20 rst_n = 0; #10 rst_n = 1; #10;
-
+        repeat(2) @(negedge clk);
+        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
-        // TEST 4: 100 ky tu 'a'(len > 64, can them block rong)
+        // TEST 4: Hash 1000 ky tu a
         // -------------------------------------------------------
-        $display("\n=======================================================");
-        $display("TEST 4: Hashing 100 ky tu 'a'");
-        $display("=======================================================");
-        
-        input_start = 1; @(posedge clk); input_start = 0;
-        
-        for (i = 0; i < 100; i = i + 1) begin
-            wait(dut.padding_inst.curr == 2'b01);
-            @(negedge clk);
-            inp_data = "a"; 
-            #10;
-        end
-        
-        wait(dut.padding_inst.curr == 2'b01);
+        $display("TEST 4: Hashing 1000 ky tu 'a'");
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1);
         @(negedge clk); 
-        input_done = 1; #10; input_done = 0; 
-        
-        // Kiem tra ket qua Test 4
+        input_start = 0;
+        for (i = 0; i < 1000; i = i + 1) begin
+            inp_data = "a"; 
+            @(negedge clk); 
+            while (ready_for_input == 1'b0) begin
+                @(negedge clk);
+            end
+        end
+        input_done = 1; 
+        @(negedge clk); 
+        input_done = 0; 
         wait(hash_valid == 1);
         @(negedge clk);
-        $display("Expected : %h", EXP_100A);
+        $display("Expected : %h", EXP_1000A);
         $display("Got   : %h", hash);
-        if (hash == EXP_100A) $display("[PASS] 100_a"); 
-        else                  $display("[FAIL] 100_a");
-        #20 rst_n = 0; #10 rst_n = 1; #10;
+        if (hash == EXP_1000A) $display("[PASS] 1000_a");
+        else                  $display("[FAIL] 1000_a");
+        repeat(2) @(negedge clk);
+        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
-        // TEST 5: 64 ky tu 'b' (55<len<64, can them block rong)
+        // TEST 5: 448<msg_length<512 bit, can block rong
         // -------------------------------------------------------
-        $display("\n=======================================================");
-        $display("TEST 5: Hashing 60 ky tu 'b' (Block Boundary Case)");
-        $display("=======================================================");
-        
-        input_start = 1; @(posedge clk); input_start = 0;
-        
-        for (i = 0; i < 60; i = i + 1) begin
-            wait(dut.padding_inst.curr == 2'b01); // Chờ Padding rảnh
-            @(negedge clk);
-            inp_data = "b"; 
-            #10;
-        end
-        
-        wait(dut.padding_inst.curr == 2'b01);
+        $display("\nTEST 5: Hashing 60 ky tu 'b'");
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1);
         @(negedge clk); 
-        input_done = 1; #10; input_done = 0; 
+        input_start = 0;
+        for (i = 0; i < 60; i = i + 1) begin
+            inp_data = "b"; 
+            @(negedge clk);
+            wait(ready_for_input == 1'b1);
+        end
+        input_done = 1; 
+        @(negedge clk); 
+        input_done = 0;     
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_60B);
         $display("Got : %h", hash);
         if (hash == EXP_60B) $display("[PASS] 60_b"); 
         else     $display("[FAIL] 60_b");
+        repeat(2) @(negedge clk);
+        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
+        // -------------------------------------------------------
+        // TEST 6: Empty String
+        // -------------------------------------------------------
+        $display("\nTEST 6: Empty String");
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1);
+        @(negedge clk); 
+        input_start = 0;
+        input_done = 1; 
+        @(negedge clk);
+         input_done = 0; 
+        wait(hash_valid == 1);
+        @(negedge clk);
+        $display("Expected : %h", EXP_EMPTY);
+        $display("Got      : %h", hash);
+        if (hash == EXP_EMPTY) $display("[PASS] Empty String"); 
+        else                   $display("[FAIL] Empty String");
+        repeat(2) @(negedge clk);
+        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
+        // -------------------------------------------------------
+        // TEST 7: 512 bit input:55 d
+        // -------------------------------------------------------
+        $display("\nTEST 7: 55 bytes 'd'");
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1);
+        @(negedge clk); 
+        input_start = 0;
+        for (i = 0; i < 55; i = i + 1) begin
+            inp_data = "d"; 
+            @(negedge clk);
+            while (ready_for_input == 1'b0) @(negedge clk);
+        end
+        input_done = 1; @(negedge clk); input_done = 0; 
+        wait(hash_valid == 1);
+        @(negedge clk);
+        $display("Expected : %h", EXP_55_D);
+        $display("Got      : %h", hash);
+        if (hash == EXP_55_D)  $display("[PASS] 55_d"); 
+        else                   $display("[FAIL] 55_d");
+        repeat(2) @(negedge clk);
+        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
+        // -------------------------------------------------------
+        // TEST 9: NIST SHA256 Example(Long Message)
+        // -------------------------------------------------------
+        $display("\nTEST 9: NIST long message example "); 
+        nist_str = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+        @(negedge clk); input_start = 1; 
+        wait(ready_for_input == 1'b1);
+        @(negedge clk); 
+        input_start = 0;
+        for (i = 0; i < 56; i = i + 1) begin
+            inp_data = nist_str >> ((55 - i) * 8); 
+            @(negedge clk);
+            while (ready_for_input == 1'b0) @(negedge clk);
+        end
+        input_done = 1; @(negedge clk); input_done = 0; 
         
+        wait(hash_valid == 1);
+        @(negedge clk);
+        $display("Expected : %h", EXP_NIST_56);
+        $display("Got      : %h", hash);
+        if (hash == EXP_NIST_56) $display("[PASS] NIST long message");
+        else                     $display("[FAIL] NIST long message");
         $display("\n=======================================================");
         $display("ALL TESTS COMPLETED"); 
-        $display("=======================================================\n");
-        
+        $display("=======================================================\n");        
         #100; $finish;
     end
 endmodule

@@ -5,6 +5,7 @@ module v2_sha256_message_padding (
     input              input_done,            //nhap xong
     input              ready_for_next_block,  //schedule doi block moi   
     input      [  7:0] inp_data,              //input
+    output             ready_for_input,
     output reg [511:0] padded_msg,            //msg da pad xong      
     output reg         padding_done,          //co bao da pad xong 1 block
     output reg         last_block             //block cuoi
@@ -18,6 +19,7 @@ module v2_sha256_message_padding (
   reg [30:0] msg_length_high;
   wire [63:0] msg_length = {msg_length_high, msg_length_low, 3'b000};//Chia doi msg_length(64 bit lam giam fmax)
   reg  extra_block;//can them block rong
+  assign ready_for_input = (curr == PROCESSING);//Chi khi dang pad moi cho phep nhan du lieu
   always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin  //reset
       curr <= IDLE;
@@ -81,13 +83,13 @@ module v2_sha256_message_padding (
             if (write_ptr == 6'd63) begin
               padding_done <= 1;//Neu da ghi du 512 bit
               last_block <= 0;//Khong phai block cuoi
-            end else write_ptr <= write_ptr + 1;//tang con tro ghi
+            end else write_ptr <= write_ptr + 1'b1;//tang con tro ghi
           end
         end
         WAIT_ROUND: begin//Trang thai cho round xu ly
           if(!ready_for_next_block) padding_done <= 0;//Neu round chua xong, phai ha co done de cho cho round xong vi done la start cua round
-          else if(!padding_done) begin//Neu round da san sang
-            padded_msg <= 512'b0;// nen thoa man dieu kien
+          else if(!padding_done) begin//Trong luc cho round chay, reset truoc padded_msg va con tro ghi
+            padded_msg <= 512'b0;
             write_ptr<= 0;
           end
         end
