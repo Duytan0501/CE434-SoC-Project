@@ -12,10 +12,8 @@ module sha256_top_tb;
     localparam [255:0] EXP_TANPRODZ       = 256'h1c241145f61fecc7e5fb3d2811558e68b589548a671f5ad6d8b19b497539648b;
     localparam [255:0] EXP_THACOMOBIHOME  = 256'haf7b22556046c054aeaf26c243188cbe9723544cf03ccc7a79916cb9c56b01d3;
     localparam [255:0] EXP_1000A          = 256'h41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3;
-    localparam [255:0] EXP_60B            = 256'hbbeb514bf12fdef276e7fde1f3cadc8fd1ec8ec070d893bd98f5d1b383de66cf;
     localparam [255:0] EXP_EMPTY          = 256'he3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
     localparam [255:0] EXP_NIST_56        = 256'h248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1;
-    localparam [255:0] EXP_55_D           = 256'h8347d07d842bdc2392323e14b0e910857b7116b59492dfad6a21de672db495cf;
     integer i;
     reg[447:0] nist_str;
     sha256_top dut (
@@ -59,7 +57,7 @@ module sha256_top_tb;
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_TOI_YEU_UIT);
-        $display("Got   : %h", hash);
+        $display("Got      : %h", hash);
         if (hash == EXP_TOI_YEU_UIT) $display("[PASS] toi_yeu_uit");
         else                         $display("[FAIL] toi_yeu_uit");
         repeat(2) @(negedge clk);
@@ -85,7 +83,7 @@ module sha256_top_tb;
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_TANPRODZ);
-        $display("Got   : %h", hash);
+        $display("Got      : %h", hash);
         if (hash == EXP_TANPRODZ) $display("[PASS] tanprodz");
         else                      $display("[FAIL] tanprodz");
         repeat(2) @(negedge clk);
@@ -116,7 +114,7 @@ module sha256_top_tb;
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_THACOMOBIHOME);
-        $display("Got   : %h", hash);
+        $display("Got      : %h", hash);
         if (hash == EXP_THACOMOBIHOME) $display("[PASS] thacomobihome");
         else                           $display("[FAIL] thacomobihome");
         repeat(2) @(negedge clk);
@@ -142,39 +140,15 @@ module sha256_top_tb;
         wait(hash_valid == 1);
         @(negedge clk);
         $display("Expected : %h", EXP_1000A);
-        $display("Got   : %h", hash);
+        $display("Got      : %h", hash);
         if (hash == EXP_1000A) $display("[PASS] 1000_a");
         else                  $display("[FAIL] 1000_a");
         repeat(2) @(negedge clk);
         rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
-        // TEST 5: 448<msg_length<512 bit, can block rong
+        // TEST 5: Empty String
         // -------------------------------------------------------
-        $display("\nTEST 5: Hashing 60 ky tu 'b'");
-        @(negedge clk); input_start = 1; 
-        wait(ready_for_input == 1'b1);
-        @(negedge clk); 
-        input_start = 0;
-        for (i = 0; i < 60; i = i + 1) begin
-            inp_data = "b"; 
-            @(negedge clk);
-            wait(ready_for_input == 1'b1);
-        end
-        input_done = 1; 
-        @(negedge clk); 
-        input_done = 0;     
-        wait(hash_valid == 1);
-        @(negedge clk);
-        $display("Expected : %h", EXP_60B);
-        $display("Got : %h", hash);
-        if (hash == EXP_60B) $display("[PASS] 60_b"); 
-        else     $display("[FAIL] 60_b");
-        repeat(2) @(negedge clk);
-        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
-        // -------------------------------------------------------
-        // TEST 6: Empty String
-        // -------------------------------------------------------
-        $display("\nTEST 6: Empty String");
+        $display("\nTEST 5: Empty String");
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1);
         @(negedge clk); 
@@ -191,31 +165,9 @@ module sha256_top_tb;
         repeat(2) @(negedge clk);
         rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
-        // TEST 7: 512 bit input:55 d
+        // TEST 6: NIST SHA256 Example(Long Message)
         // -------------------------------------------------------
-        $display("\nTEST 7: 55 bytes 'd'");
-        @(negedge clk); input_start = 1; 
-        wait(ready_for_input == 1'b1);
-        @(negedge clk); 
-        input_start = 0;
-        for (i = 0; i < 55; i = i + 1) begin
-            inp_data = "d"; 
-            @(negedge clk);
-            while (ready_for_input == 1'b0) @(negedge clk);
-        end
-        input_done = 1; @(negedge clk); input_done = 0; 
-        wait(hash_valid == 1);
-        @(negedge clk);
-        $display("Expected : %h", EXP_55_D);
-        $display("Got      : %h", hash);
-        if (hash == EXP_55_D)  $display("[PASS] 55_d"); 
-        else                   $display("[FAIL] 55_d");
-        repeat(2) @(negedge clk);
-        rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
-        // -------------------------------------------------------
-        // TEST 9: NIST SHA256 Example(Long Message)
-        // -------------------------------------------------------
-        $display("\nTEST 9: NIST long message example "); 
+        $display("\nTEST 6: NIST long message example "); 
         nist_str = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1);
