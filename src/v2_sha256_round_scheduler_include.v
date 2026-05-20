@@ -24,7 +24,7 @@ module v2_sha256_round_scheduler_include (
     // ========== HASH STATE ==========
     reg [31:0] a, b, c, d, e, f, g, h;
     reg [31:0] a_old, b_old, c_old, d_old, e_old, f_old, g_old, h_old;
-    reg [2:0] hash_state;//Chia state update hash
+    reg [2:0] hash_stage;//Chia stage update hash
     // ========== MESSAGE SCHEDULE ==========
     reg [31:0] W [0:15];
 
@@ -41,7 +41,7 @@ module v2_sha256_round_scheduler_include (
     // Stage 2 registers (hoàn thành T1 và tổng cuối)
     reg [31:0] s2_T1;          // T1 đầy đủ sau khi cộng
     // ===== PIPELINE CONTROL =====
-    reg [1:0] round_stage;      // 0→1→2→3 thay vì pipe_step 0→1→2
+    reg [1:0] round_stage;      
 
     // ===== MESSAGE SCHEDULE PIPELINE =====
     reg [31:0] s0_sigma_lower0, s0_sigma_lower1;
@@ -126,7 +126,7 @@ module v2_sha256_round_scheduler_include (
                 if (round == 63 && round_stage == 2'd3) 
                     next_state = UPDATE_HASH;
             UPDATE_HASH: 
-                if (hash_state == 3'd4) begin//Chi khi hash den stage 4, cap nhat current_hash xong moi chuyen state
+                if (hash_stage == 3'd4) begin//Chi khi hash den stage 4, cap nhat current_hash xong moi chuyen state
                     if (last_block) next_state = WAIT_LAST;
                     else next_state = IDLE;
                 end else next_state = UPDATE_HASH;
@@ -147,7 +147,7 @@ module v2_sha256_round_scheduler_include (
             hash_valid <= 0;
             current_hash <= 256'h0;
             final_hash <= 256'h0;
-            hash_state <= 3'd0;
+            hash_stage <= 3'd0;
             first_block <= 1'b1;//Vì mới reset nên chắc chắn block nạp vào là block đầu
             // Reset tất cả thanh ghi 
             s0_sigma0 <= 0; s0_sigma1 <= 0; s0_ch_W0 <= 0; s0_maj <= 0;
@@ -167,7 +167,7 @@ module v2_sha256_round_scheduler_include (
                     round_stage <= 0;
                     ready_for_next_block <= 1;
                     hash_valid <= 0;
-                    hash_state <= 3'd0;
+                    hash_stage <= 3'd0;
                 end
                 LOAD_IV: begin
                     round <= 0;
@@ -295,31 +295,31 @@ module v2_sha256_round_scheduler_include (
                 
                 UPDATE_HASH: begin//Chia thành 4 stage, mỗi stage chỉ tính 2 thanh ghi.
                     // Các thanh ghi cũ a_old, b_old,... lúc này mang chính giá trị của hash, nên ko cần gán lại a cũ ở round 0 của block mới nữa
-                    case(hash_state) 
+                    case(hash_stage) 
                         3'd0: begin
                             a_old <= a+a_old;
                             b_old <= b+b_old;
-                            hash_state <= 3'd1;
+                            hash_stage <= 3'd1;
                         end
                         3'd1: begin
                             c_old <= c+c_old;
                             d_old <= d+d_old;
-                            hash_state <= 3'd2;
+                            hash_stage <= 3'd2;
                         end
                         3'd2: begin
                             e_old <= e+e_old;
                             f_old <= f+f_old;
-                            hash_state <= 3'd3;
+                            hash_stage <= 3'd3;
                         end
                         3'd3:begin
                             g_old <= g+g_old;
                             h_old <= h+h_old;
-                            hash_state <= 3'd4;
+                            hash_stage <= 3'd4;
                         end
                         3'd4:begin
                             //Current hash chính là a+a cũ
                             current_hash <= {a_old,b_old,c_old,d_old,e_old,f_old,g_old,h_old};
-                            hash_state <= 3'd0;
+                            hash_stage <= 3'd0;
                         end
                     endcase
                 end

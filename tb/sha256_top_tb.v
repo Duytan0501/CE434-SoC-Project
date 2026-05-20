@@ -16,6 +16,9 @@ module sha256_top_tb;
     localparam [255:0] EXP_NIST_56        = 256'h248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1;
     integer i;
     reg[447:0] nist_str;
+    time start_hash;//Bat dau hash
+    time end_hash;//Hash done
+    integer cycle_count;//Tong so chu ky de hash xong 1 testcase
     sha256_top dut (
         .clk(clk), .rst_n(rst_n), .input_start(input_start),
         .input_done(input_done), .inp_data(inp_data),
@@ -40,6 +43,7 @@ module sha256_top_tb;
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1); 
         @(negedge clk); 
+        start_hash = $time;
         input_start = 0; 
         inp_data = "t"; 
         @(negedge clk); inp_data = "o"; 
@@ -55,11 +59,14 @@ module sha256_top_tb;
         @(negedge clk); input_done = 1; 
         @(negedge clk); input_done = 0;
         wait(hash_valid == 1);
+        end_hash=$time;
         @(negedge clk);
         $display("Expected : %h", EXP_TOI_YEU_UIT);
         $display("Got      : %h", hash);
         if (hash == EXP_TOI_YEU_UIT) $display("[PASS] toi_yeu_uit");
         else                         $display("[FAIL] toi_yeu_uit");
+        cycle_count = (end_hash-start_hash) / 20;
+        $display("Time elapsed: %0dns (%0d clock cycles)", (end_hash - start_hash), cycle_count);
         repeat(2) @(negedge clk);
         rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
@@ -69,6 +76,7 @@ module sha256_top_tb;
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1); 
         @(negedge clk); 
+        start_hash=$time;
         input_start = 0; 
         inp_data = "t"; 
         @(negedge clk); inp_data = "a";  
@@ -81,11 +89,14 @@ module sha256_top_tb;
         @(negedge clk); input_done = 1; 
         @(negedge clk); input_done = 0;
         wait(hash_valid == 1);
+        end_hash = $time;
         @(negedge clk);
         $display("Expected : %h", EXP_TANPRODZ);
         $display("Got      : %h", hash);
         if (hash == EXP_TANPRODZ) $display("[PASS] tanprodz");
         else                      $display("[FAIL] tanprodz");
+        cycle_count = (end_hash-start_hash) / 20;
+        $display("Time elapsed: %0dns (%0d clock cycles)", (end_hash - start_hash), cycle_count);
         repeat(2) @(negedge clk);
         rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
@@ -95,6 +106,7 @@ module sha256_top_tb;
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1);        
         @(negedge clk); 
+        start_hash=$time;
         input_start = 0;
         inp_data = "t";        
         @(negedge clk); inp_data = "h";  
@@ -112,11 +124,14 @@ module sha256_top_tb;
         @(negedge clk); input_done = 1; 
         @(negedge clk); input_done = 0;
         wait(hash_valid == 1);
+        end_hash=$time;
         @(negedge clk);
         $display("Expected : %h", EXP_THACOMOBIHOME);
         $display("Got      : %h", hash);
         if (hash == EXP_THACOMOBIHOME) $display("[PASS] thacomobihome");
         else                           $display("[FAIL] thacomobihome");
+        cycle_count = (end_hash-start_hash) / 20;
+        $display("Time elapsed: %0dns (%0d clock cycles)", (end_hash - start_hash), cycle_count);
         repeat(2) @(negedge clk);
         rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
@@ -126,6 +141,7 @@ module sha256_top_tb;
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1);
         @(negedge clk); 
+        start_hash = $time;
         input_start = 0;
         for (i = 0; i < 1000; i = i + 1) begin
             inp_data = "a"; 
@@ -138,11 +154,14 @@ module sha256_top_tb;
         @(negedge clk); 
         input_done = 0; 
         wait(hash_valid == 1);
+        end_hash=$time;
         @(negedge clk);
         $display("Expected : %h", EXP_1000A);
         $display("Got      : %h", hash);
         if (hash == EXP_1000A) $display("[PASS] 1000_a");
         else                  $display("[FAIL] 1000_a");
+        cycle_count = (end_hash-start_hash) / 20;
+        $display("Time elapsed: %0dns (%0d clock cycles)", (end_hash - start_hash), cycle_count);
         repeat(2) @(negedge clk);
         rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
@@ -152,16 +171,20 @@ module sha256_top_tb;
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1);
         @(negedge clk); 
+        start_hash = $time;
         input_start = 0;
         input_done = 1; 
         @(negedge clk);
-         input_done = 0; 
+        input_done = 0; 
         wait(hash_valid == 1);
+        end_hash = $time;
         @(negedge clk);
         $display("Expected : %h", EXP_EMPTY);
         $display("Got      : %h", hash);
         if (hash == EXP_EMPTY) $display("[PASS] Empty String"); 
         else                   $display("[FAIL] Empty String");
+        cycle_count = (end_hash-start_hash) / 20;
+        $display("Time elapsed: %0dns (%0d clock cycles)", (end_hash - start_hash), cycle_count);
         repeat(2) @(negedge clk);
         rst_n = 0; repeat(2) @(negedge clk); rst_n = 1; repeat(2) @(negedge clk);
         // -------------------------------------------------------
@@ -172,6 +195,7 @@ module sha256_top_tb;
         @(negedge clk); input_start = 1; 
         wait(ready_for_input == 1'b1);
         @(negedge clk); 
+        start_hash = $time;
         input_start = 0;
         for (i = 0; i < 56; i = i + 1) begin
             inp_data = nist_str >> ((55 - i) * 8); 
@@ -179,13 +203,15 @@ module sha256_top_tb;
             while (ready_for_input == 1'b0) @(negedge clk);
         end
         input_done = 1; @(negedge clk); input_done = 0; 
-        
         wait(hash_valid == 1);
+        end_hash = $time;
         @(negedge clk);
         $display("Expected : %h", EXP_NIST_56);
         $display("Got      : %h", hash);
         if (hash == EXP_NIST_56) $display("[PASS] NIST long message");
         else                     $display("[FAIL] NIST long message");
+        cycle_count = (end_hash-start_hash) / 20;
+        $display("Time elapsed: %0dns (%0d clock cycles)", (end_hash - start_hash), cycle_count);
         $display("\n=======================================================");
         $display("ALL TESTS COMPLETED"); 
         $display("=======================================================\n");        
