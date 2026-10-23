@@ -213,7 +213,7 @@ module v2_sha256_round_scheduler_include (
                         s0_K  <= get_K(round);
                         round_stage <= 2'd1;
                     end
-						  // ==========================================
+					// ==========================================
                     // STAGE 1: Cộng dồn T1, T2 và W_next
                     // ==========================================
 						  else if (round_stage == 2'd1) begin
@@ -223,7 +223,7 @@ module v2_sha256_round_scheduler_include (
                         round_stage <= 2'd2;
                     end
                     // ==========================================
-                    // STAGE 3: Cập nhật thanh ghi + shift W
+                    // STAGE 2: Cập nhật thanh ghi + shift W
                     // ==========================================
                     else if (round_stage == 2'd2) begin
                         // Cập nhật a và e mới(các thanh gh này ko thay đổi ở state trước nên ko cần lưu lại)

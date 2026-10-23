@@ -89,7 +89,7 @@ module sha256_apb_wrapper (
         end
     end
     assign core_hash_rd_addr = PADDR[4:2]; 
-    reg r_pready;
+reg r_pready;
     always @(posedge PCLK or negedge PRESETn) begin
         if (!PRESETn) begin
             PRDATA   <= 32'd0;
@@ -97,15 +97,15 @@ module sha256_apb_wrapper (
         end else begin
             if (PSEL && !PWRITE && !PENABLE) begin
                 r_pready <= 1'b0;
+            end 
+            else if (PSEL && !PWRITE && PENABLE && !r_pready) begin
+                r_pready <= 1'b1; 
                 case (PADDR[7:0])
                     8'h00: PRDATA <= {30'd0, core_hash_valid, core_ready_for_input};
                     8'h20, 8'h24, 8'h28, 8'h2C, 
                     8'h30, 8'h34, 8'h38, 8'h3C: PRDATA <= core_hash_out_32;
                     default: PRDATA <= 32'd0;
                 endcase
-            end 
-            else if (PSEL && !PWRITE && PENABLE && !r_pready) begin
-                r_pready <= 1'b1; 
             end 
             else begin
                 r_pready <= 1'b1;
